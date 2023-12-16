@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  pantau-api:
+    image: server-pantau:v1.0
+    container_name: pantau-api
+    restart: always
+    volumes:
+      - "${PANTAUAPI_PATH}:/var/www"
+    entrypoint:
+      - sh
+      - -c
+      - |
+        set -e
+
+        composer install --verbose --prefer-dist --no-progress --no-interaction --no-suggest --optimize-autoloader
+        /docker-entrypoint.sh
+    ports:
+      - "${PANTAUAPI_PORT}:8400"
+    expose:
+      - "9000"
+      - "8000"
+    working_dir: /var/www
+    networks:
+      - pantau-net
+
+networks:
+  pantau-net:
+    external: true

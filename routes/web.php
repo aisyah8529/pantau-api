@@ -13,6 +13,14 @@
 |
 */
 
+// $router->get('/', function () use ($router) {
+//     return $router->app->version();
+// });
+
 $router->get('/', function () use ($router) {
-    return $router->app->version();
+    return view('index');
+});
+
+$router->get('/key', function() {
+    return \Illuminate\Support\Str::random(32);
 });
