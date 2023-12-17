@@ -7,10 +7,17 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 use Laravel\Lumen\Exceptions\Handler as ExceptionHandler;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
+
+use App\Enums\Message\MessageError;
+use App\Libraries\Response;
+use App\Traits\HasLocale;
 
 class Handler extends ExceptionHandler
 {
+    use HasLocale;
+
     /**
      * A list of the exception types that should not be reported.
      *
@@ -49,6 +56,21 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $exception)
     {
+        // Check if request from API
+        if ($request->expectsJson()) {
+            $this->setLocale($request);
+
+            // Check if exception is not found
+            if ($exception instanceof NotFoundHttpException) {
+                // Response as error
+                $error = (object) MessageError::NOT_FOUND;
+                return Response::error($exception->getStatusCode(), [], trans($error->message, ['attribute' => trans('request')]));
+            }
+        } else {
+            // Response as view
+            return view('errors.404');
+        }
+
         return parent::render($request, $exception);
     }
 }
