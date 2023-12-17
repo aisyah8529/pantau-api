@@ -56,20 +56,20 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $exception)
     {
-        // // Check if request from API
-        // if ($request->expectsJson()) {
-        //     $this->setLocale($request);
+        // Check if request from API
+        if ($request->expectsJson()) {
+            $this->setLocale($request);
 
-        //     // Check if exception is not found
-        //     if ($exception instanceof NotFoundHttpException) {
-        //         // Response as error
-        //         $error = (object) MessageError::NOT_FOUND;
-        //         return Response::error($exception->getStatusCode(), [], trans($error->message, ['attribute' => trans('request')]));
-        //     }
-        // } else {
-        //     // Response as view
-        //     return view('errors.404');
-        // }
+            // Check if exception is not found
+            if ($exception instanceof NotFoundHttpException) {
+                // Response as error
+                $error = (object) MessageError::NOT_FOUND;
+                return Response::error($exception->getStatusCode(), [], trans($error->message, ['attribute' => trans('request')]));
+            }
+        } else {
+            // Response as view
+            return view('errors.404');
+        }
 
         return parent::render($request, $exception);
     }
