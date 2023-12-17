@@ -11,6 +11,7 @@ use Laravel\Lumen\Auth\Authorizable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 use App\Traits\HasUuid;
+use App\Enums\Status;
 
 class User extends Model implements JWTSubject, AuthenticatableContract, AuthorizableContract
 {
@@ -18,12 +19,27 @@ class User extends Model implements JWTSubject, AuthenticatableContract, Authori
     use HasUuid;
 
     protected $fillable = [
-        'name', 'email',
+        'name',
+        'email',
+        'email_verified_at',
+        'peranan_id',
+        'status',
     ];
 
     protected $hidden = [
         'password',
+        'remember_token',
     ];
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'peranan_id');
+    }
+
+    public function status()
+    {
+        return Status::getKey($this->status);
+    }
 
     public function getJWTIdentifier()
     {

@@ -9,6 +9,6 @@ final class Status extends Enum
 {
     use HasEnumCollection;
 
-    const inactive = 0;
-    const active = 1;
+    const inactive = '0';
+    const active = '1';
 }

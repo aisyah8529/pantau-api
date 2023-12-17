@@ -10,17 +10,17 @@ class Role extends Model
 {
     use HasUuid;
 
+    protected $table = 'peranans';
+
     protected $fillable = [
-        'type',
-        'description',
-        'status',
+        'nama_peranan',
     ];
   
     public function status()
     {
         return Status::getKey($this->status);
     }
-  
+
     public function user()
     {
         return $this->hasOne(User::class);
