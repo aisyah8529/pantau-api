@@ -31,6 +31,16 @@ class User extends Model implements JWTSubject, AuthenticatableContract, Authori
         'remember_token',
     ];
 
+    public function student()
+    {
+        return $this->hasOne(Student::class);
+    }
+
+    public function inout()
+    {
+        return $this->hasOne(Inout::class);
+    }
+
     public function role()
     {
         return $this->belongsTo(Role::class, 'peranan_id');
