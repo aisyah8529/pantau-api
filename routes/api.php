@@ -10,5 +10,9 @@ $router->group(
         $router->post('logout', ['uses' => 'Auth\LogoutController@index']);
 
         $router->post('dashboard', ['uses' => 'Dashboard\DashboardController@index']);
+
+        $router->group(['prefix' => 'student'], function () use ($router) {
+            $router->post('list', ['uses' => 'Student\StudentController@index']);
+        });
     }
 );
