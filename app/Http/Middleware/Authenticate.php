@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\Message\MessageWarning;
+use App\Libraries\Response;
 use Closure;
 use Illuminate\Contracts\Auth\Factory as Auth;
 
@@ -35,8 +37,10 @@ class Authenticate
      */
     public function handle($request, Closure $next, $guard = null)
     {
-        if ($this->auth->guard($guard)->guest()) {
-            return response('Unauthorized.', 401);
+        if ($this->auth->guard($guard)->guest()) 
+        {
+            $warning = (object) MessageWarning::UNAUTHORIZED_EXPIRED;
+            return Response::warning($warning->code, [], trans($warning->message, ['attribute' => trans('token')]));
         }
 
         return $next($request);
