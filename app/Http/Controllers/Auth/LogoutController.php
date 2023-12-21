@@ -8,6 +8,11 @@ use App\Libraries\Response;
 
 class LogoutController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:api');
+    }
+
     public function index()
     {
         // Logout user and invalidate the current token
