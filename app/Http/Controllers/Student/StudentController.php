@@ -19,16 +19,6 @@ class StudentController extends Controller
 
     public function index(Request $request)
     {
-
-        /// NEED TO FIX FIRST
-
-
-
-
-
-
-
-
         $students = new StudentCollection(
             Student::from('pelajars as p')
                 ->select('p.*')
@@ -42,9 +32,7 @@ class StudentController extends Controller
                 })
                 ->get()
         );
-
-
-
+        
         $success = (object) MessageSuccess::RETRIEVED;
         return Response::success($success->code, $students, trans($success->message, ['attribute' => 'student list']));
     }

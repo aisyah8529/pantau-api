@@ -30,9 +30,9 @@ class DashboardController extends Controller
         foreach (Student::all() as $student) {
             $inout = Inout::where('user_id', $student->user_id)->latest()->first();
             if (!empty($inout)) {
-                if ($inout->status_masuk == InStatus::in || $inout->status_masuk == null) {
+                if ($inout->status_masuk == InStatus::in || $inout->status_masuk == null || $inout->status_masuk == InStatus::home) {
                     $student_in_count++;
-                } else if ($inout->status_masuk == InStatus::out || $inout->status_masuk == InStatus::home) {
+                } else if ($inout->status_masuk == InStatus::out) {
                     $student_out_count++;
                 }
             } else {
@@ -43,9 +43,9 @@ class DashboardController extends Controller
         foreach (Student::where('jantina', Gender::male)->get() as $student) {
             $inout = Inout::where('user_id', $student->user_id)->latest()->first();
             if (!empty($inout)) {
-                if ($inout->status_masuk == InStatus::in || $inout->status_masuk == null) {
+                if ($inout->status_masuk == InStatus::in || $inout->status_masuk == null || $inout->status_masuk == InStatus::home) {
                     $student_in_male_count++;
-                } else if ($inout->status_masuk == InStatus::out || $inout->status_masuk == InStatus::home) {
+                } else if ($inout->status_masuk == InStatus::out) {
                     $student_out_male_count++;
                 }
             } else {
@@ -56,9 +56,9 @@ class DashboardController extends Controller
         foreach (Student::where('jantina', Gender::female)->get() as $student) {
             $inout = Inout::where('user_id', $student->user_id)->latest()->first();
             if (!empty($inout)) {
-                if ($inout->status_masuk == InStatus::in || $inout->status_masuk == null) {
+                if ($inout->status_masuk == InStatus::in || $inout->status_masuk == null || $inout->status_masuk == InStatus::home) {
                     $student_in_female_count++;
-                } else if ($inout->status_masuk == InStatus::out || $inout->status_masuk == InStatus::home) {
+                } else if ($inout->status_masuk == InStatus::out) {
                     $student_out_female_count++;
                 }
             } else {
@@ -73,7 +73,7 @@ class DashboardController extends Controller
 
         foreach (Reason::all() as $reason) {
             foreach (Student::all() as $student) {
-                $inout = Inout::where('user_id', $student->user_id)->latest()->first();
+                $inout = Inout::where('user_id', $student->user_id)->where('status_masuk', InStatus::out)->latest()->first();
                 if (!empty($inout)) {
                     if ($inout->tujuan_id == 1) {
                         $r1++;
@@ -109,7 +109,7 @@ class DashboardController extends Controller
             'reasons' => $reasons,
 
         ];
-        
+
         $success = (object) MessageSuccess::RETRIEVED;
         return Response::success($success->code, $response, trans($success->message, ['attribute' => 'data']));
     }
