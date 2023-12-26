@@ -22,12 +22,12 @@ class StudentResource extends JsonResource
     public function toArray($request = null)
     {
         return [
-            'id' => $this->id,
+            'userId' => $this->user_id,
             'name' => $this->nama_pelajar,
             'ndpNo' => $this->no_ndp,
             'gender' => $this->gender(),
             'phone' => $this->no_tel,
-            'out_datetime' => $this->inout,
+            'out_date' => $this->inouts,
         ];
     }
 

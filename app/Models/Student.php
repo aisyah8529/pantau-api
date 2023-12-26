@@ -15,9 +15,9 @@ class Student extends Model
         return Status::getKey($this->status);
     }
 
-    public function inout()
+    public function inouts()
     {
-        return $this->hasOne(Inout::class, 'user_id');
+        return $this->hasMany(Inout::class, 'user_id');
     }
 
     public function user()

@@ -20,6 +20,9 @@ class DashboardController extends Controller
 
     public function index()
     {
+        $all_student_count = 0;
+        $all_student_male_count = 0;
+        $all_student_female_count = 0;
         $student_in_count = 0;
         $student_out_count = 0;
         $student_in_male_count = 0;
@@ -27,63 +30,67 @@ class DashboardController extends Controller
         $student_in_female_count = 0;
         $student_out_female_count = 0;
 
-        foreach (Student::all() as $student) {
-            $inout = Inout::where('user_id', $student->user_id)->latest()->first();
-            if (!empty($inout)) {
-                if ($inout->status_masuk == InStatus::in || $inout->status_masuk == null || $inout->status_masuk == InStatus::home) {
-                    $student_in_count++;
-                } else if ($inout->status_masuk == InStatus::out) {
-                    $student_out_count++;
-                }
-            } else {
-                $student_in_count++;
-            }
-        }
-
-        foreach (Student::where('jantina', Gender::male)->get() as $student) {
-            $inout = Inout::where('user_id', $student->user_id)->latest()->first();
-            if (!empty($inout)) {
-                if ($inout->status_masuk == InStatus::in || $inout->status_masuk == null || $inout->status_masuk == InStatus::home) {
-                    $student_in_male_count++;
-                } else if ($inout->status_masuk == InStatus::out) {
-                    $student_out_male_count++;
-                }
-            } else {
-                $student_in_male_count++;
-            }
-        }
-
-        foreach (Student::where('jantina', Gender::female)->get() as $student) {
-            $inout = Inout::where('user_id', $student->user_id)->latest()->first();
-            if (!empty($inout)) {
-                if ($inout->status_masuk == InStatus::in || $inout->status_masuk == null || $inout->status_masuk == InStatus::home) {
-                    $student_in_female_count++;
-                } else if ($inout->status_masuk == InStatus::out) {
-                    $student_out_female_count++;
-                }
-            } else {
-                $student_in_female_count++;
-            }
-        }
+        $all_student_count = Student::all()->count();
+        $all_student_male_count = Student::where('jantina', Gender::male)->count();
+        $all_student_female_count = Student::where('jantina', Gender::female)->count();
+        $student_out_count = Student::from('pelajars as p')
+            ->select('p.*')
+            ->join('keluar_masuks as k', 'k.user_id', '=', 'p.user_id')
+            ->where(function ($query) {
+                $query->where('k.status_masuk', InStatus::out);
+            })
+            ->count();
+        $student_in_count = $all_student_count - $student_out_count;
+        $student_out_male_count = Student::from('pelajars as p')
+            ->select('p.*')
+            ->join('keluar_masuks as k', 'k.user_id', '=', 'p.user_id')
+            ->where(function ($query) {
+                $query->where('p.jantina', Gender::male);
+                $query->where('k.status_masuk', InStatus::out);
+            })
+            ->count();
+        $student_in_male_count = $all_student_male_count - $student_out_male_count;
+        $student_out_female_count = Student::from('pelajars as p')
+            ->select('p.*')
+            ->join('keluar_masuks as k', 'k.user_id', '=', 'p.user_id')
+            ->where(function ($query) {
+                $query->where('p.jantina', Gender::female);
+                $query->where('k.status_masuk', InStatus::out);
+            })
+            ->count();
+        $student_in_female_count = $all_student_female_count - $student_out_female_count;
 
         $reasons = [];
         $r1 = 0;
         $r2 = 0;
         $r3 = 0;
 
+        $r1 = Student::from('pelajars as p')
+            ->select('p.*')
+            ->join('keluar_masuks as k', 'k.user_id', '=', 'p.user_id')
+            ->where(function ($query) {
+                $query->where('k.tujuan_id', 1);
+                $query->where('k.status_masuk', InStatus::out);
+            })
+            ->count();
+        $r2 = Student::from('pelajars as p')
+            ->select('p.*')
+            ->join('keluar_masuks as k', 'k.user_id', '=', 'p.user_id')
+            ->where(function ($query) {
+                $query->where('k.tujuan_id', 2);
+                $query->where('k.status_masuk', InStatus::out);
+            })
+            ->count();
+        $r3 = Student::from('pelajars as p')
+            ->select('p.*')
+            ->join('keluar_masuks as k', 'k.user_id', '=', 'p.user_id')
+            ->where(function ($query) {
+                $query->where('k.tujuan_id', 3);
+                $query->where('k.status_masuk', InStatus::out);
+            })
+            ->count();
+
         foreach (Reason::all() as $reason) {
-            foreach (Student::all() as $student) {
-                $inout = Inout::where('user_id', $student->user_id)->where('status_masuk', InStatus::out)->latest()->first();
-                if (!empty($inout)) {
-                    if ($inout->tujuan_id == 1) {
-                        $r1++;
-                    } else if ($inout->tujuan_id == 2) {
-                        $r2++;
-                    } else if ($inout->tujuan_id == 3) {
-                        $r3++;
-                    }
-                }
-            }
             array_push(
                 $reasons,
                 [
@@ -96,9 +103,9 @@ class DashboardController extends Controller
 
         $response = [
             'student_count' => [
-                'all' => Student::all()->count(),
-                'male' => Student::where('jantina', Gender::male)->count(),
-                'female' => Student::where('jantina', Gender::female)->count(),
+                'all' => $all_student_count,
+                'male' => $all_student_male_count,
+                'female' => $all_student_female_count,
                 'all_in' => $student_in_count,
                 'all_out' => $student_out_count,
                 'male_in' => $student_in_male_count,
@@ -107,7 +114,6 @@ class DashboardController extends Controller
                 'female_out' => $student_out_female_count
             ],
             'reasons' => $reasons,
-
         ];
 
         $success = (object) MessageSuccess::RETRIEVED;
