@@ -16,7 +16,7 @@ class StudentController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api');
+        // $this->middleware('auth:api');
     }
 
     public function index(Request $request)
@@ -51,15 +51,16 @@ class StudentController extends Controller
         $endWeek8 = Carbon::now()->format('Y-m-d');
         $endtWeek8String = date('M j, Y', strtotime($endWeek8));
         $rangeDate8 = Helpers::getDatesFromRange($startWeek8, $endWeek8);
+        $rangeDateSplit8 = array_chunk($rangeDate8, 8);
         $rangeDate8String = "{$startWeek8String} - {$endtWeek8String}";
 
         $graph8 = [];
         $graph8Info = [];
 
-        foreach ($rangeDate8 as $a) {
+        foreach ($rangeDateSplit8 as $b) {
             $countDate8 = Student::from('pelajars as p')
                 ->join('keluar_masuks as k', 'k.user_id', '=', 'p.user_id')
-                ->where('k.tarikh_keluar', $a)
+                ->whereBetween('k.tarikh_keluar', [$b[0], $b[count($b) - 1]])
                 ->where(function ($query) use ($request) {
                     if ($request->input('tujuan_id')) $query->where('k.tujuan_id', $request->input('tujuan_id'));
                 })
@@ -70,12 +71,12 @@ class StudentController extends Controller
             array_push(
                 $graph8,
                 array(
-                    'domain' => date('d/m', strtotime($a)),
+                    'domain' => date('d/m', strtotime($b[0])),
                     'measure' => $countDate8,
                 )
             );
         }
-
+        
         $graph8Info = [
             'title' => $rangeDate8String,
             'description' => 'The first 8 weeks',
