@@ -3,18 +3,20 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\Student\StudentCollection;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 use App\Enums\Message\MessageSuccess;
+use App\Libraries\Helpers;
 use App\Libraries\Response;
+use App\Models\Reason;
 use App\Models\Student;
 
 class StudentController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api');
+        // $this->middleware('auth:api');
     }
 
     public function index(Request $request)
@@ -22,6 +24,8 @@ class StudentController extends Controller
         $students = Student::from('pelajars as p')
             ->select('*')
             ->join('keluar_masuks as k', 'k.user_id', '=', 'p.user_id')
+            ->join('kursuses as c', 'c.id', '=', 'p.kursus_id')
+            ->join('tujuans as t', 't.id', '=', 'k.tujuan_id')
             ->where(function ($query) use ($request) {
                 if ($request->input('tujuan_id')) $query->where('k.tujuan_id', $request->input('tujuan_id'));
                 if ($request->input('status_masuk')) $query->where('k.status_masuk', $request->input('status_masuk'));
@@ -35,12 +39,106 @@ class StudentController extends Controller
         return Response::success($success->code, $students, trans($success->message, ['attribute' => 'student list']));
     }
 
-    public function statistic()
+
+
+    public function statistic(Request $request)
     {
+        // The first 8 weeks
 
-        // need to response total for grraph
-        // weekly & monthly
-        // 
+        $currentDate8 = Carbon::now();
+        $startWeek8 = $currentDate8->subWeek(8)->format('Y-m-d');
+        $startWeek8String = date('M j, Y', strtotime($startWeek8));
+        $endWeek8 = Carbon::now()->format('Y-m-d');
+        $endtWeek8String = date('M j, Y', strtotime($endWeek8));
+        $rangeDate8 = Helpers::getDatesFromRange($startWeek8, $endWeek8);
+        $rangeDate8String = "{$startWeek8String} - {$endtWeek8String}";
 
+        $graph8 = [];
+        $graph8Info = [];
+
+        foreach ($rangeDate8 as $a) {
+            $countDate8 = Student::from('pelajars as p')
+                ->join('keluar_masuks as k', 'k.user_id', '=', 'p.user_id')
+                ->where('k.tarikh_keluar', $a)
+                ->where(function ($query) use ($request) {
+                    if ($request->input('tujuan_id')) $query->where('k.tujuan_id', $request->input('tujuan_id'));
+                })
+                ->when(true, function ($query) {
+                    $query->orderBy('k.tarikh_keluar', 'desc');
+                })
+                ->count();
+            array_push(
+                $graph8,
+                array(
+                    'domain' => date('d/m', strtotime($a)),
+                    'measure' => $countDate8,
+                )
+            );
+        }
+
+        $graph8Info = [
+            'title' => $rangeDate8String,
+            'description' => 'The first 8 weeks',
+            'graph_data' => $graph8,
+        ];
+
+        // The first 6 months
+
+        $currentDate6 = Carbon::now();
+        $startMonth6 = $currentDate6->subMonth(6)->format('Y-m-d');
+        $startMonth6String = date('M, Y', strtotime($startMonth6));
+        $endMonth6 = Carbon::now()->format('Y-m-d');
+        $endMonth6String = date('M, Y', strtotime($endMonth6));
+        $period = \Carbon\CarbonPeriod::create($startMonth6, '1 month', $endMonth6);
+        $rangeDate6String = "{$startMonth6String} - {$endMonth6String}";
+
+        $graph6 = [];
+        $graph6Info = [];
+
+        foreach ($period as $dt) {
+
+            $countDate6 = Student::from('pelajars as p')
+                ->join('keluar_masuks as k', 'k.user_id', '=', 'p.user_id')
+                ->whereMonth('k.tarikh_keluar', $dt->format('m'))
+                ->whereYear('k.tarikh_keluar', $dt->format('Y'))
+                ->where(function ($query) use ($request) {
+                    if ($request->input('tujuan_id')) $query->where('k.tujuan_id', $request->input('tujuan_id'));
+                })
+                ->when(true, function ($query) {
+                    $query->orderBy('k.tarikh_keluar', 'desc');
+                })
+                ->count();
+
+            array_push(
+                $graph6,
+                array(
+                    'domain' => $dt->format('M/y'),
+                    'measure' => $countDate6,
+                )
+            );
+        }
+
+        $graph6Info = [
+            'title' => $rangeDate6String,
+            'description' => 'The first 6 months',
+            'graph_data' => $graph6,
+        ];
+
+        // Response data
+
+        $reason = Reason::from('tujuans as t')
+            ->select('t.nama_tujuan as reason')
+            ->where('t.id', $request->input('tujuan_id'))
+            ->first();
+
+
+        $response = [
+            $reason,
+            $graph8Info,
+            $graph6Info
+        ];
+
+        $success = (object) MessageSuccess::RETRIEVED;
+        return Response::success($success->code, $response, trans($success->message, ['attribute' => 'data']));
     }
 }
