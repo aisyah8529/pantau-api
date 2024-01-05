@@ -7,10 +7,12 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 use App\Enums\Message\MessageSuccess;
+use App\Enums\PermissionStatus;
 use App\Libraries\Helpers;
 use App\Libraries\Response;
 use App\Models\Reason;
 use App\Models\Student;
+use Illuminate\Support\Arr;
 
 class StudentController extends Controller
 {
@@ -141,5 +143,64 @@ class StudentController extends Controller
 
         $success = (object) MessageSuccess::RETRIEVED;
         return Response::success($success->code, $response, trans($success->message, ['attribute' => 'data']));
+    }
+
+    public function suspendList()
+    {
+        $students = Student::from('pelajars as p')
+            ->select('*')
+            ->join('keluar_masuks as k', 'k.user_id', '=', 'p.user_id')
+            ->join('kursuses as c', 'c.id', '=', 'p.kursus_id')
+            ->join('tujuans as t', 't.id', '=', 'k.tujuan_id')
+            ->where('k.statuskebenaran_id', PermissionStatus::suspended)
+            ->when(true, function ($query) {
+                $query->orderBy('k.updated_at', 'desc');
+            })
+            ->get();
+
+        $reasons = Reason::from('tujuans as t')
+            ->select('t.*')
+            ->get();
+
+        $reasonarr = [];
+        $index = 0;
+
+        foreach ($students as $s) {
+            foreach ($reasons as $r) {
+                $count = Student::from('pelajars as p')
+                    ->join('keluar_masuks as k', 'k.user_id', '=', 'p.user_id')
+                    ->join('tujuans as t', 't.id', '=', 'k.tujuan_id')
+                    ->where('p.user_id', $s->user_id)
+                    ->where('t.id', $r->id)
+                    ->count();
+
+                array_push(
+                    $reasonarr,
+                    array(
+                        'index' => $index,
+                        'user_id' => $s->user_id,
+                        'statuskebenaran_id' => $s->statuskebenaran_id,
+                        'nama_pelajar' => $s->nama_pelajar,
+                        'nama_kursus' => $s->nama_kursus,
+                        'reason' => $r->nama_tujuan,
+                        'count' => $count,
+                    )
+                );
+            }
+            $index++;
+        }
+        
+        $response = [];
+
+        foreach ($reasonarr as $rr) {
+            $response[$rr['index']]['user_id'] = $rr['user_id'];
+            $response[$rr['index']]['statuskebenaran_id'] = $rr['statuskebenaran_id'];
+            $response[$rr['index']]['nama_pelajar'] = $rr['nama_pelajar'];
+            $response[$rr['index']]['nama_kursus'] = $rr['nama_kursus'];
+            $response[$rr['index']]['reasons'][] = array('reason' => $rr['reason'], 'count' => $rr['count']);
+        }
+
+        $success = (object) MessageSuccess::RETRIEVED;
+        return Response::success($success->code, $response, trans($success->message, ['attribute' => 'student list']));
     }
 }
