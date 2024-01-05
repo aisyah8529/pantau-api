@@ -15,6 +15,7 @@ $router->group(
             $router->post('list', ['uses' => 'Student\StudentController@index']);
             $router->post('statistic', ['uses' => 'Student\StudentController@statistic']);
             $router->post('list/suspend', ['uses' => 'Student\StudentController@suspendList']);
+            $router->post('update/suspend', ['uses' => 'Student\StudentController@suspendUpdate']);
         });
     }
 );

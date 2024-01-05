@@ -7,12 +7,13 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 use App\Enums\Message\MessageSuccess;
+use App\Enums\Message\MessageError;
 use App\Enums\PermissionStatus;
 use App\Libraries\Helpers;
 use App\Libraries\Response;
+use App\Models\Inout;
 use App\Models\Reason;
 use App\Models\Student;
-use Illuminate\Support\Arr;
 
 class StudentController extends Controller
 {
@@ -182,6 +183,7 @@ class StudentController extends Controller
                         'statuskebenaran_id' => $s->statuskebenaran_id,
                         'nama_pelajar' => $s->nama_pelajar,
                         'nama_kursus' => $s->nama_kursus,
+                        'no_ndp' => $s->no_ndp,
                         'reason' => $r->nama_tujuan,
                         'count' => $count,
                     )
@@ -189,7 +191,7 @@ class StudentController extends Controller
             }
             $index++;
         }
-        
+
         $response = [];
 
         foreach ($reasonarr as $rr) {
@@ -197,10 +199,27 @@ class StudentController extends Controller
             $response[$rr['index']]['statuskebenaran_id'] = $rr['statuskebenaran_id'];
             $response[$rr['index']]['nama_pelajar'] = $rr['nama_pelajar'];
             $response[$rr['index']]['nama_kursus'] = $rr['nama_kursus'];
+            $response[$rr['index']]['no_ndp'] = $rr['no_ndp'];
             $response[$rr['index']]['reasons'][] = array('reason' => $rr['reason'], 'count' => $rr['count']);
         }
 
         $success = (object) MessageSuccess::RETRIEVED;
         return Response::success($success->code, $response, trans($success->message, ['attribute' => 'student list']));
+    }
+
+    public function suspendUpdate(Request $request)
+    {
+        $out = Inout::find($request->input('id'));
+
+        if (empty($out)) {
+            $error = (object) MessageError::NOT_FOUND;
+            return Response::error($error->code, [], trans($error->message, ['attribute' => trans('account')]));
+        }
+
+        $out->statuskebenaran_id = $request->input('permission_status_id');
+        $out->save();
+
+        $success = (object) MessageSuccess::UPDATED;
+        return Response::success($success->code, $out, trans($success->message, ['attribute' => trans('account')]));
     }
 }
