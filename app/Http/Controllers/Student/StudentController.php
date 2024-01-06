@@ -27,6 +27,7 @@ class StudentController extends Controller
         $students = Student::from('pelajars as p')
             ->select('*')
             ->join('keluar_masuks as k', 'k.user_id', '=', 'p.user_id')
+            ->select('*','k.id as keluar_masuk_id')
             ->join('kursuses as c', 'c.id', '=', 'p.kursus_id')
             ->join('tujuans as t', 't.id', '=', 'k.tujuan_id')
             ->where(function ($query) use ($request) {
