@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Enums\InStatus;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -27,7 +28,7 @@ class StudentController extends Controller
         $students = Student::from('pelajars as p')
             ->select('*')
             ->join('keluar_masuks as k', 'k.user_id', '=', 'p.user_id')
-            ->select('*','k.id as keluar_masuk_id')
+            ->select('*', 'k.id as keluar_masuk_id')
             ->join('kursuses as c', 'c.id', '=', 'p.kursus_id')
             ->join('tujuans as t', 't.id', '=', 'k.tujuan_id')
             ->where(function ($query) use ($request) {
@@ -42,8 +43,6 @@ class StudentController extends Controller
         $success = (object) MessageSuccess::RETRIEVED;
         return Response::success($success->code, $students, trans($success->message, ['attribute' => 'student list']));
     }
-
-
 
     public function statistic(Request $request)
     {
@@ -151,13 +150,8 @@ class StudentController extends Controller
     {
         $students = Student::from('pelajars as p')
             ->select('*')
-            ->join('keluar_masuks as k', 'k.user_id', '=', 'p.user_id')
             ->join('kursuses as c', 'c.id', '=', 'p.kursus_id')
-            ->join('tujuans as t', 't.id', '=', 'k.tujuan_id')
-            ->where('k.statuskebenaran_id', PermissionStatus::suspended)
-            ->when(true, function ($query) {
-                $query->orderBy('k.updated_at', 'desc');
-            })
+            ->orderByRaw('FIELD(p.gantung, 0, 1)')
             ->get();
 
         $reasons = Reason::from('tujuans as t')
@@ -174,21 +168,25 @@ class StudentController extends Controller
                     ->join('tujuans as t', 't.id', '=', 'k.tujuan_id')
                     ->where('p.user_id', $s->user_id)
                     ->where('t.id', $r->id)
+                    ->where('k.status_masuk', InStatus::late)
                     ->count();
 
-                array_push(
-                    $reasonarr,
-                    array(
-                        'index' => $index,
-                        'user_id' => $s->user_id,
-                        'statuskebenaran_id' => $s->statuskebenaran_id,
-                        'nama_pelajar' => $s->nama_pelajar,
-                        'nama_kursus' => $s->nama_kursus,
-                        'no_ndp' => $s->no_ndp,
-                        'reason' => $r->nama_tujuan,
-                        'count' => $count,
-                    )
-                );
+                if ($r->id == 1 || $r->id == 2) {
+                    array_push(
+                        $reasonarr,
+                        array(
+                            'index' => $index,
+                            'user_id' => $s->user_id,
+                            'gantung' => $s->gantung,
+                            'nama_pelajar' => $s->nama_pelajar,
+                            'nama_kursus' => $s->nama_kursus,
+                            'no_ndp' => $s->no_ndp,
+                            'reason' => $r->nama_tujuan,
+                            'status_masuk' => InStatus::late,
+                            'count' => $count,
+                        )
+                    );
+                }
             }
             $index++;
         }
@@ -197,11 +195,11 @@ class StudentController extends Controller
 
         foreach ($reasonarr as $rr) {
             $response[$rr['index']]['user_id'] = $rr['user_id'];
-            $response[$rr['index']]['statuskebenaran_id'] = $rr['statuskebenaran_id'];
+            $response[$rr['index']]['gantung'] = $rr['gantung'];
             $response[$rr['index']]['nama_pelajar'] = $rr['nama_pelajar'];
             $response[$rr['index']]['nama_kursus'] = $rr['nama_kursus'];
             $response[$rr['index']]['no_ndp'] = $rr['no_ndp'];
-            $response[$rr['index']]['reasons'][] = array('reason' => $rr['reason'], 'count' => $rr['count']);
+            $response[$rr['index']]['reasons'][] = array('reason' => $rr['reason'], 'status_masuk' => $rr['status_masuk'], 'count' => $rr['count']);
         }
 
         $success = (object) MessageSuccess::RETRIEVED;
