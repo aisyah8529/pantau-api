@@ -20,7 +20,7 @@ class StudentController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api');
+        // $this->middleware('auth:api');
     }
 
     public function index(Request $request)
@@ -208,17 +208,28 @@ class StudentController extends Controller
 
     public function suspendUpdate(Request $request)
     {
-        $out = Inout::find($request->input('id'));
+        $student = Student::find($request->input('id'));
 
-        if (empty($out)) {
+        if (empty($student)) {
             $error = (object) MessageError::NOT_FOUND;
             return Response::error($error->code, [], trans($error->message, ['attribute' => trans('account')]));
         }
 
-        $out->statuskebenaran_id = $request->input('permission_status_id');
-        $out->save();
+        $student->gantung = $request->input('gantung');
+        $student->save();
 
         $success = (object) MessageSuccess::UPDATED;
-        return Response::success($success->code, $out, trans($success->message, ['attribute' => trans('account')]));
+        return Response::success($success->code, $student, trans($success->message, ['attribute' => trans('account')]));
+    }
+
+    public function studentAll()
+    {
+        $students = Student::from('pelajars as p')
+            ->select('*')
+            ->orderByRaw('FIELD(p.gantung, 0, 1)')
+            ->get();
+
+        $success = (object) MessageSuccess::RETRIEVED;
+        return Response::success($success->code, $students, trans($success->message, ['attribute' => 'student list']));
     }
 }

@@ -13,6 +13,7 @@ $router->group(
 
         $router->group(['prefix' => 'student'], function () use ($router) {
             $router->post('list', ['uses' => 'Student\StudentController@index']);
+            $router->post('list/all', ['uses' => 'Student\StudentController@studentAll']);
             $router->post('statistic', ['uses' => 'Student\StudentController@statistic']);
             $router->post('list/suspend', ['uses' => 'Student\StudentController@suspendList']);
             $router->post('update/suspend', ['uses' => 'Student\StudentController@suspendUpdate']);
