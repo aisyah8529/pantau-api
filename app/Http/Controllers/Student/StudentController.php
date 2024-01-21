@@ -166,29 +166,33 @@ class StudentController extends Controller
                 $count = Student::from('pelajars as p')
                     ->join('keluar_masuks as k', 'k.user_id', '=', 'p.user_id')
                     ->join('tujuans as t', 't.id', '=', 'k.tujuan_id')
-                    ->where('p.user_id', $s->user_id)
-                    ->where('t.id', $r->id)
-                    ->where('k.status_masuk', InStatus::late)
+                    ->where([
+                        'p.user_id' => $s->user_id,
+                        't.id' => $r->id,
+                        'k.status_masuk' => InStatus::late,
+                    ])
                     ->count();
 
-                if ($r->id == 1 || $r->id == 2) {
-                    array_push(
-                        $reasonarr,
-                        array(
-                            'index' => $index,
-                            'user_id' => $s->user_id,
-                            'gantung' => $s->gantung,
-                            'nama_pelajar' => $s->nama_pelajar,
-                            'nama_kursus' => $s->nama_kursus,
-                            'no_ndp' => $s->no_ndp,
-                            'reason' => $r->nama_tujuan,
-                            'status_masuk' => InStatus::late,
-                            'count' => $count,
-                        )
-                    );
+                if ($count > 0) {
+                    if ($r->id == 1 || $r->id == 2) {
+                        array_push(
+                            $reasonarr,
+                            array(
+                                'index' => $index,
+                                'user_id' => $s->user_id,
+                                'gantung' => $s->gantung,
+                                'nama_pelajar' => $s->nama_pelajar,
+                                'nama_kursus' => $s->nama_kursus,
+                                'no_ndp' => $s->no_ndp,
+                                'reason' => $r->nama_tujuan,
+                                'status_masuk' => InStatus::late,
+                                'count' => $count,
+                            )
+                        );
+                    }
+                    $index++;
                 }
             }
-            $index++;
         }
 
         $response = [];
